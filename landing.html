@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather MCP Server</title>
+    <!-- highlight.js – graceful degradation if CDN unreachable -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
+          onerror="this.remove()">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --bg:#0f172a;--surface:#1e293b;--border:#334155;
+            --text:#f1f5f9;--muted:#94a3b8;
+            --accent:#38bdf8;--accent-dim:#0ea5e9;
+            --code-bg:#0d1117;--success:#4ade80;--error:#f87171;
+        }
+        body{
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;
+        }
+        .container{max-width:960px;margin:0 auto;padding:2rem 1.5rem}
+
+        /* ---- Hero ---- */
+        .hero{text-align:center;padding:3rem 0 2rem}
+        .hero h1{
+            font-size:2.5rem;font-weight:700;
+            background:linear-gradient(135deg,var(--accent),#818cf8);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-clip:text;margin-bottom:.5rem;
+        }
+        .hero p{color:var(--muted);font-size:1.1rem;max-width:620px;margin:0 auto}
+
+        /* ---- Endpoint badge ---- */
+        .endpoint-badge{
+            display:inline-flex;align-items:center;gap:.6rem;
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:8px;padding:.75rem 1.25rem;margin:1.5rem 0;
+            font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:.92rem;
+        }
+        .endpoint-badge .label{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+        .endpoint-badge .url{color:var(--accent)}
+        .endpoint-badge button{
+            background:none;border:1px solid var(--border);color:var(--muted);
+            cursor:pointer;padding:.2rem .55rem;border-radius:4px;font-size:.75rem;
+        }
+        .endpoint-badge button:hover{color:var(--text);border-color:var(--accent)}
+
+        /* ---- Cards ---- */
+        .card{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:12px;margin-bottom:2rem;overflow:hidden;
+        }
+        .card-header{
+            padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;
+        }
+        .card-header h2{font-size:1.25rem;font-weight:600}
+        .card-body{padding:1.5rem}
+
+        /* ---- Tabs ---- */
+        .tabs{display:flex;gap:0}
+        .tab{
+            padding:.5rem 1.25rem;background:none;border:none;color:var(--muted);
+            cursor:pointer;font-size:.9rem;font-weight:500;
+            border-bottom:2px solid transparent;transition:all .2s;
+        }
+        .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+        .tab:hover:not(.active){color:var(--text)}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+
+        /* ---- Code blocks ---- */
+        pre{
+            background:var(--code-bg);border-radius:8px;padding:1.25rem;
+            overflow-x:auto;position:relative;
+        }
+        pre code{
+            font-family:'SF Mono','Fira Code',Consolas,monospace;
+            font-size:.84rem;line-height:1.65;color:#e6edf3;
+        }
+        .copy-btn{
+            position:absolute;top:.75rem;right:.75rem;
+            background:var(--border);border:none;color:var(--muted);
+            padding:.3rem .6rem;border-radius:4px;cursor:pointer;font-size:.75rem;
+        }
+        .copy-btn:hover{background:var(--accent-dim);color:#fff}
+
+        /* ---- Test panel ---- */
+        .test-form{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem}
+        .test-form input{
+            flex:1;min-width:200px;padding:.6rem 1rem;
+            background:var(--code-bg);border:1px solid var(--border);
+            border-radius:6px;color:var(--text);font-size:.95rem;
+        }
+        .test-form input:focus{outline:none;border-color:var(--accent)}
+        .btn{
+            padding:.6rem 1.25rem;border:none;border-radius:6px;
+            font-size:.9rem;font-weight:500;cursor:pointer;transition:all .2s;
+        }
+        .btn-primary{background:var(--accent-dim);color:#fff}
+        .btn-primary:hover{background:var(--accent)}
+        .btn-secondary{background:var(--border);color:var(--text)}
+        .btn-secondary:hover{background:#475569}
+        #test-result{
+            background:var(--code-bg);border-radius:8px;padding:1.25rem;
+            min-height:80px;max-height:500px;overflow:auto;
+            font-family:'SF Mono','Fira Code',Consolas,monospace;
+            font-size:.84rem;color:#e6edf3;white-space:pre-wrap;
+        }
+
+        /* ---- Misc ---- */
+        .note{
+            background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);
+            border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;
+            font-size:.9rem;color:var(--muted);line-height:1.5;
+        }
+        .note strong{color:var(--accent)}
+        .spinner{
+            display:inline-block;width:14px;height:14px;
+            border:2px solid var(--border);border-top-color:var(--accent);
+            border-radius:50%;animation:spin .6s linear infinite;
+        }
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .footer{text-align:center;padding:2rem 0;color:var(--muted);font-size:.85rem}
+        .footer a{color:var(--accent);text-decoration:none}
+        .footer a:hover{text-decoration:underline}
+
+        @media(max-width:640px){
+            .hero h1{font-size:1.75rem}
+            .card-header{flex-direction:column;align-items:flex-start}
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ======================== Hero ======================== -->
+    <div class="hero">
+        <h1>Weather MCP Server</h1>
+        <p>
+            A <strong>Model Context Protocol</strong> server providing real-time
+            weather data. Connect your AI agent to get current conditions and
+            forecasts for any location worldwide.
+        </p>
+        <div class="endpoint-badge">
+            <span class="label">MCP&nbsp;Endpoint</span>
+            <span class="url" id="mcp-url">…</span>
+            <button onclick="copyToClipboard(getMcpUrl(),'mcp-copy-btn')" id="mcp-copy-btn">Copy</button>
+        </div>
+    </div>
+
+    <!-- =================== Code Samples ==================== -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Connect Your Agent</h2>
+            <div class="tabs">
+                <button class="tab active" data-tab="pydantic" onclick="switchTab(this)">Pydantic AI</button>
+                <button class="tab"        data-tab="langchain" onclick="switchTab(this)">LangChain</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="note">
+                <strong>Domino users:</strong> The sample code includes a helper
+                that fetches a short-lived bearer token from the Domino sidecar
+                (<code>localhost:8899</code>). If you are running locally or
+                outside Domino, simply remove the
+                <code>headers=</code> argument.
+            </div>
+
+            <div id="tab-pydantic" class="tab-content active">
+                <pre><code class="language-python" id="code-pydantic"></code><button class="copy-btn" onclick="copyCode('pydantic')">Copy</button></pre>
+            </div>
+            <div id="tab-langchain" class="tab-content">
+                <pre><code class="language-python" id="code-langchain"></code><button class="copy-btn" onclick="copyCode('langchain')">Copy</button></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== Test Panel ===================== -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Test the API</h2>
+        </div>
+        <div class="card-body">
+            <div class="test-form">
+                <input type="text" id="location-input"
+                       placeholder="Enter a location (e.g. San Francisco, CA)"
+                       value="San Francisco, CA">
+                <button class="btn btn-primary"   onclick="testApi('current')">Current Weather</button>
+                <button class="btn btn-secondary"  onclick="testApi('forecast')">Today's Forecast</button>
+            </div>
+            <div id="test-result">Results will appear here&hellip;</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Powered by
+        <a href="https://www.weatherapi.com/" target="_blank" rel="noopener">WeatherAPI.com</a>
+        &middot; Built with
+        <a href="https://fastapi.tiangolo.com" target="_blank" rel="noopener">FastAPI</a> +
+        <a href="https://github.com/tadata-org/fastapi_mcp" target="_blank" rel="noopener">fastapi-mcp</a>
+        &middot;
+        <a href="docs" target="_blank" rel="noopener">OpenAPI docs</a>
+    </div>
+</div>
+
+<!-- highlight.js (optional – page works without it) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" onerror="this.remove()"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js" onerror="this.remove()"></script>
+
+<script>
+// ---------------------------------------------------------------------------
+// URL helpers – work correctly behind any reverse-proxy prefix
+// ---------------------------------------------------------------------------
+function getBasePath() {
+    return window.location.pathname.replace(/\/+$/, '');
+}
+function getMcpUrl() {
+    return window.location.origin + getBasePath() + '/mcp';
+}
+
+document.getElementById('mcp-url').textContent = getMcpUrl();
+
+// ---------------------------------------------------------------------------
+// Code samples (placeholder __MCP_URL__ replaced at render time)
+// ---------------------------------------------------------------------------
+const PYDANTIC_CODE = `import asyncio
+import requests
+from pydantic_ai import Agent
+from pydantic_ai.mcp import MCPServerStreamableHTTP
+
+
+# -- Domino platform: fetch a short-lived bearer token ------------------
+# This helper calls the Domino sidecar running inside every Domino app
+# container.  Remove the headers= argument when running outside Domino.
+def get_domino_auth_headers() -> dict:
+    resp = requests.get("http://localhost:8899/access-token", timeout=2)
+    token = resp.text.strip()
+    if not token.startswith("Bearer "):
+        token = f"Bearer {token}"
+    return {"Authorization": token}
+# -----------------------------------------------------------------------
+
+
+server = MCPServerStreamableHTTP(
+    url="__MCP_URL__",
+    headers=get_domino_auth_headers(),   # remove when running locally
+)
+
+agent = Agent("openai:gpt-4o", toolsets=[server])
+
+
+async def main():
+    async with agent:
+        result = await agent.run(
+            "What is the weather like in San Francisco right now?"
+        )
+        print(result.output)
+
+
+asyncio.run(main())`;
+
+const LANGCHAIN_CODE = `import asyncio
+import requests
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langgraph.prebuilt import create_react_agent
+from langchain_openai import ChatOpenAI
+
+
+# -- Domino platform: fetch a short-lived bearer token ------------------
+# This helper calls the Domino sidecar running inside every Domino app
+# container.  Remove the headers= argument when running outside Domino.
+def get_domino_auth_headers() -> dict:
+    resp = requests.get("http://localhost:8899/access-token", timeout=2)
+    token = resp.text.strip()
+    if not token.startswith("Bearer "):
+        token = f"Bearer {token}"
+    return {"Authorization": token}
+# -----------------------------------------------------------------------
+
+
+async def main():
+    model = ChatOpenAI(model="gpt-4o")
+
+    async with MultiServerMCPClient(
+        {
+            "weather": {
+                "url": "__MCP_URL__",
+                "transport": "streamable_http",
+                "headers": get_domino_auth_headers(),  # remove when running locally
+            }
+        }
+    ) as client:
+        agent = create_react_agent(model, client.get_tools())
+        result = await agent.ainvoke(
+            {"messages": [{"role": "user", "content": "What is the weather in San Francisco?"}]}
+        )
+        print(result["messages"][-1].content)
+
+
+asyncio.run(main())`;
+
+function renderSamples() {
+    const url = getMcpUrl();
+    document.getElementById('code-pydantic').textContent  = PYDANTIC_CODE.replaceAll('__MCP_URL__', url);
+    document.getElementById('code-langchain').textContent = LANGCHAIN_CODE.replaceAll('__MCP_URL__', url);
+    if (typeof hljs !== 'undefined') hljs.highlightAll();
+}
+renderSamples();
+
+// ---------------------------------------------------------------------------
+// Tab switching
+// ---------------------------------------------------------------------------
+function switchTab(btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+}
+
+// ---------------------------------------------------------------------------
+// Clipboard helpers
+// ---------------------------------------------------------------------------
+function copyToClipboard(text, btnId) {
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById(btnId);
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = orig, 1500);
+    });
+}
+
+function copyCode(tab) {
+    const el = document.getElementById('code-' + tab);
+    navigator.clipboard.writeText(el.textContent).then(() => {
+        const btn = el.parentElement.querySelector('.copy-btn');
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = orig, 1500);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Test panel
+// ---------------------------------------------------------------------------
+async function testApi(type) {
+    const location = document.getElementById('location-input').value.trim();
+    if (!location) return;
+
+    const resultEl = document.getElementById('test-result');
+    resultEl.style.color = '#e6edf3';
+    resultEl.innerHTML = '<span class="spinner"></span> Fetching\u2026';
+
+    const endpoint = type === 'current' ? 'weather/current' : 'weather/forecast';
+    const url = getBasePath() + '/' + endpoint + '?location=' + encodeURIComponent(location);
+
+    try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (!resp.ok) {
+            resultEl.style.color = 'var(--error)';
+            resultEl.textContent = 'Error ' + resp.status + ': ' + (data.detail || JSON.stringify(data));
+        } else {
+            resultEl.style.color = '#e6edf3';
+            resultEl.textContent = JSON.stringify(data, null, 2);
+        }
+    } catch (err) {
+        resultEl.style.color = 'var(--error)';
+        resultEl.textContent = 'Request failed: ' + err.message;
+    }
+}
+
+// Allow Enter key in the input to trigger current weather
+document.getElementById('location-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') testApi('current');
+});
+</script>
+</body>
+</html>
