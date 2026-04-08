@@ -4,6 +4,7 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY", "")
@@ -215,6 +216,13 @@ async def get_weather_forecast(
 async def landing():
     html_path = Path(__file__).parent / "landing.html"
     return HTMLResponse(html_path.read_text())
+
+
+app.mount(
+    "/static",
+    StaticFiles(directory=Path(__file__).parent / "static"),
+    name="static",
+)
 
 
 # ---------------------------------------------------------------------------
