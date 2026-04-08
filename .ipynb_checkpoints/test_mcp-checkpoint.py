@@ -4,6 +4,7 @@ import requests
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServerStreamableHTTP
 
+MCP_SERVER_ADDRESS = "https://apps.cloud-dogfood.domino.tech/apps/403c7f11-77da-41a5-bb16-a638488c9eef/mcp"
 
 # -- Domino platform: fetch a short-lived bearer token ------------------
 # This helper calls the Domino sidecar running inside every Domino app
@@ -18,7 +19,7 @@ def get_domino_auth_headers() -> dict:
 
 
 server = MCPServerStreamableHTTP(
-    url="https://apps.cloud-dogfood.domino.tech/apps/403c7f11-77da-41a5-bb16-a638488c9eef/mcp",
+    url=MCP_SERVER_ADDRESS,
     headers=get_domino_auth_headers(),   # remove when running locally
 )
 
