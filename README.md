@@ -10,7 +10,7 @@ Built with [fastapi-mcp](https://github.com/tadata-org/fastapi_mcp).
 ```bash
 pip install -r requirements.txt
 export WEATHER_API_KEY=your_key_here
-python main.py
+./app.sh
 ```
 
 Open <http://localhost:8888> for interactive docs, code samples, and an API test
@@ -25,7 +25,7 @@ panel. The MCP endpoint is at <http://localhost:8888/mcp>.
 2. **Start command:**
 
    ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8888
+   ./app.sh
    ```
 
 3. **Authentication** – Domino routes traffic through an nginx proxy that
